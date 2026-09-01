@@ -1,0 +1,6 @@
+{
+  "name": "e-Radiologie",
+  "description": "Frontend de la plateforme e-Radiologie",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
