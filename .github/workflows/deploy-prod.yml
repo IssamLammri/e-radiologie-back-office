@@ -11,47 +11,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # --------------------------------------------------
-      # 1. Récupération du code
-      # --------------------------------------------------
+      # ---------------------------------------------
+      # Checkout
+      # ---------------------------------------------
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      # --------------------------------------------------
-      # 2. Installation de Node.js
-      # --------------------------------------------------
+      # ---------------------------------------------
+      # Node.js
+      # ---------------------------------------------
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
 
-      # --------------------------------------------------
-      # 3. Installation des dépendances
-      # --------------------------------------------------
+      # ---------------------------------------------
+      # Dependencies
+      # ---------------------------------------------
       - name: Install dependencies
         run: npm ci
 
-      # --------------------------------------------------
-      # 4. Build Vue / Vite
-      # --------------------------------------------------
+      # ---------------------------------------------
+      # Build production
+      # ---------------------------------------------
       - name: Build production
         env:
           VITE_API_BASE_URL: https://api.e-radiologie.com
         run: npm run build
 
-      # --------------------------------------------------
-      # 5. Vérification du build
-      # --------------------------------------------------
-      - name: Check build
+      # ---------------------------------------------
+      # Verify build
+      # ---------------------------------------------
+      - name: Verify build
         run: |
           test -f dist/index.html
           test -d dist/assets
           echo "Build OK"
 
-      # --------------------------------------------------
-      # 6. Configuration SSH
-      # --------------------------------------------------
+      # ---------------------------------------------
+      # SSH configuration
+      # ---------------------------------------------
       - name: Configure SSH
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
@@ -60,47 +60,47 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          echo "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-      # --------------------------------------------------
-      # 7. Création du dossier temporaire sur le VPS
-      # --------------------------------------------------
+      # ---------------------------------------------
+      # Prepare temporary directory
+      # ---------------------------------------------
       - name: Prepare deployment directory
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          ssh "$VPS_USER@$VPS_HOST" "
-            rm -rf ~/deploy-e-radiologie-backoffice &&
+          ssh "$VPS_USER@$VPS_HOST" '
+            set -e
+            rm -rf ~/deploy-e-radiologie-backoffice
             mkdir -p ~/deploy-e-radiologie-backoffice
-          "
+          '
 
-      # --------------------------------------------------
-      # 8. Envoi du build sur le VPS
-      # --------------------------------------------------
+      # ---------------------------------------------
+      # Upload dist
+      # ---------------------------------------------
       - name: Upload Backoffice
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          rsync -az \
-            --delete \
+          rsync -az --delete \
             dist/ \
             "$VPS_USER@$VPS_HOST:~/deploy-e-radiologie-backoffice/"
 
-      # --------------------------------------------------
-      # 9. Publication dans le dossier Nginx
-      # --------------------------------------------------
+      # ---------------------------------------------
+      # Publish
+      # ---------------------------------------------
       - name: Publish website
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          ssh "$VPS_USER@$VPS_HOST" "
+          ssh "$VPS_USER@$VPS_HOST" '
             set -e
 
             sudo mkdir -p /var/www/admin.e-radiologie.com
@@ -119,24 +119,29 @@ jobs:
               -type f -exec chmod 644 {} \;
 
             rm -rf ~/deploy-e-radiologie-backoffice
-          "
+          '
 
-      # --------------------------------------------------
-      # 10. Vérification du déploiement
-      # --------------------------------------------------
-      - name: Check deployed website
+      # ---------------------------------------------
+      # Verify production
+      # ---------------------------------------------
+      - name: Verify deployment
         run: |
           sleep 3
-          curl --fail --silent --show-error \
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
             --retry 3 \
+            --retry-delay 2 \
             https://admin.e-radiologie.com/ \
             > /dev/null
 
-          echo "Backoffice is online"
+          echo "E-radiologie Backoffice is online"
 
-      # --------------------------------------------------
-      # 11. Fin
-      # --------------------------------------------------
+      # ---------------------------------------------
+      # Done
+      # ---------------------------------------------
       - name: Deployment completed
         run: |
           echo "Deployment completed successfully"
