@@ -11,47 +11,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ---------------------------------------------
-      # Checkout
-      # ---------------------------------------------
+      # 1. Récupération du code venant de Google AI Studio / GitHub
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # ---------------------------------------------
-      # Node.js
-      # ---------------------------------------------
+      # 2. Installation de Node
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: "22"
-          cache: "npm"
 
-      # ---------------------------------------------
-      # Dependencies
-      # ---------------------------------------------
+      # 3. Correction temporaire de Vue Router
+      # Cette modification existe UNIQUEMENT dans le runner GitHub.
+      # Aucun changement n'est renvoyé dans le dépôt.
+      - name: Fix Vue Router compatibility
+        run: |
+          npm pkg set dependencies.vue-router="^4.5.1"
+
+      # 4. Installation
+      # On utilise npm install car Google AI Studio ne fournit
+      # pas nécessairement de package-lock.json
       - name: Install dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
-      # ---------------------------------------------
-      # Build production
-      # ---------------------------------------------
+      # 5. Build de production
       - name: Build production
         env:
           VITE_API_BASE_URL: https://api.e-radiologie.com
         run: npm run build
 
-      # ---------------------------------------------
-      # Verify build
-      # ---------------------------------------------
+      # 6. Vérification du build
       - name: Verify build
         run: |
           test -f dist/index.html
           test -d dist/assets
           echo "Build OK"
 
-      # ---------------------------------------------
-      # SSH configuration
-      # ---------------------------------------------
+      # 7. Configuration SSH
       - name: Configure SSH
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
@@ -66,9 +62,7 @@ jobs:
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-      # ---------------------------------------------
-      # Prepare temporary directory
-      # ---------------------------------------------
+      # 8. Préparation du dossier temporaire
       - name: Prepare deployment directory
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -80,9 +74,7 @@ jobs:
             mkdir -p ~/deploy-e-radiologie-backoffice
           '
 
-      # ---------------------------------------------
-      # Upload dist
-      # ---------------------------------------------
+      # 9. Envoi uniquement du build
       - name: Upload Backoffice
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -92,9 +84,7 @@ jobs:
             dist/ \
             "$VPS_USER@$VPS_HOST:~/deploy-e-radiologie-backoffice/"
 
-      # ---------------------------------------------
-      # Publish
-      # ---------------------------------------------
+      # 10. Mise en production
       - name: Publish website
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -121,9 +111,7 @@ jobs:
             rm -rf ~/deploy-e-radiologie-backoffice
           '
 
-      # ---------------------------------------------
-      # Verify production
-      # ---------------------------------------------
+      # 11. Vérification du site
       - name: Verify deployment
         run: |
           sleep 3
@@ -139,9 +127,6 @@ jobs:
 
           echo "E-radiologie Backoffice is online"
 
-      # ---------------------------------------------
-      # Done
-      # ---------------------------------------------
       - name: Deployment completed
         run: |
           echo "Deployment completed successfully"
