@@ -11,7 +11,8 @@ import {
   X,
   FileText,
   Layers,
-  Tags
+  Tags,
+  Activity
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -141,10 +142,27 @@ const navigation = computed(() => {
     </div>
 
     <!-- Main content -->
-    <div class="flex-1 md:pl-64 flex flex-col">
-      <main class="flex-1 p-6 md:p-8 pt-20 md:pt-8 overflow-y-auto">
+    <div class="flex-1 md:pl-64 flex flex-col min-h-screen">
+      <main class="flex-1 p-6 md:p-8 pt-20 md:pt-8">
         <RouterView />
       </main>
+      
+      <!-- Footer -->
+      <footer class="sticky bottom-0 bg-white border-t border-slate-200 py-4 px-6 md:px-8 mt-auto flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 z-10 shrink-0">
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2 text-slate-900 font-bold text-lg">
+            <Activity class="h-5 w-5 text-blue-600" />
+            E-Radiologie
+          </div>
+          <p class="text-sm text-slate-500">
+            Application conçue avec 💗 par
+            <a href="https://www.linkedin.com/in/issam-lammri-2a3174163/" target="_blank" rel="noopener noreferrer" class="font-semibold text-slate-700 hover:text-blue-600 transition-colors">Issam LAMMRI</a>
+          </p>
+        </div>
+        <div class="text-sm text-slate-500 sm:mb-0.5">
+          E-Radiologie © 2026. Plateforme de e-learning médicale.
+        </div>
+      </footer>
     </div>
   </div>
 </template>
