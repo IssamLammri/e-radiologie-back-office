@@ -3,7 +3,7 @@ name: Deploy E-radiologie Backoffice
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
