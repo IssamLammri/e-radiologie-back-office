@@ -2,6 +2,7 @@
 import { useAuthStore } from '../../stores/auth';
 import { useRouter, useRoute } from 'vue-router';
 import { ref, computed } from 'vue';
+import { resources } from '../../api/editorialApi';
 import { 
   LayoutDashboard, 
   Users, 
@@ -29,6 +30,7 @@ const navigation = computed(() => {
   const items = [];
   
   if (authStore.isAdmin) {
+    for (const [resource, config] of Object.entries(resources)) items.push({ name: config.label, href: `/content/${resource}`, icon: FileText });
     items.push({ name: 'Cas cliniques', href: '/cases', icon: FileText });
     items.push({ name: 'Modalités', href: '/modalities', icon: Layers });
     items.push({ name: 'Catégories', href: '/categories', icon: Tags });

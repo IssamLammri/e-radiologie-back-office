@@ -11,43 +11,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Récupération du code venant de Google AI Studio / GitHub
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # 2. Installation de Node
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: "22"
 
-      # 3. Correction temporaire de Vue Router
       # Cette modification existe UNIQUEMENT dans le runner GitHub.
       # Aucun changement n'est renvoyé dans le dépôt.
       - name: Fix Vue Router compatibility
         run: |
           npm pkg set dependencies.vue-router="^4.5.1"
 
-      # 4. Installation
       # On utilise npm install car Google AI Studio ne fournit
       # pas nécessairement de package-lock.json
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      # 5. Build de production
-      - name: Build production
-        env:
-          VITE_API_BASE_URL: https://api.e-radiologie.com
-        run: npm run build
-
-      # 6. Vérification du build
-      - name: Verify build
-        run: |
-          test -f dist/index.html
-          test -d dist/assets
-          echo "Build OK"
-
-      # 7. Configuration SSH
       - name: Configure SSH
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
@@ -62,7 +44,24 @@ jobs:
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-      # 8. Préparation du dossier temporaire
+      - name: Load public frontend configuration from server
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh "$VPS_USER@$VPS_HOST" \
+            'test -f ~/projets/e-radiologie-back-office/.env.local && sed -n "/^VITE_API_BASE_URL=/p" ~/projets/e-radiologie-back-office/.env.local' > .env.local
+          grep -q '^VITE_API_BASE_URL=.' .env.local
+
+      - name: Build production
+        run: npm run build
+
+      - name: Verify build
+        run: |
+          test -f dist/index.html
+          test -d dist/assets
+          echo "Build OK"
+
       - name: Prepare deployment directory
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -74,7 +73,6 @@ jobs:
             mkdir -p ~/deploy-e-radiologie-backoffice
           '
 
-      # 9. Envoi uniquement du build
       - name: Upload Backoffice
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -84,7 +82,6 @@ jobs:
             dist/ \
             "$VPS_USER@$VPS_HOST:~/deploy-e-radiologie-backoffice/"
 
-      # 10. Mise en production
       - name: Publish website
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -111,7 +108,6 @@ jobs:
             rm -rf ~/deploy-e-radiologie-backoffice
           '
 
-      # 11. Vérification du site
       - name: Verify deployment
         run: |
           sleep 3

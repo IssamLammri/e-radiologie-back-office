@@ -1,5 +1,15 @@
 # E-radiologie Backoffice
 
+## Environnement local commun
+
+Depuis le dossier parent `E-RADIOLOGIE`, lancer `make start` pour démarrer le
+backend MySQL, phpMyAdmin et les deux interfaces. Voir le [guide local](../README.md)
+pour les comptes de test et les commandes. Cette interface est disponible sur
+http://localhost:3001 et utilise l'API http://localhost:18740.
+
+Pour un lancement hors Docker, définir `VITE_API_BASE_URL=http://localhost:18740`
+dans `.env.local` et utiliser `npm run dev -- --port 3001 --strictPort`.
+
 Application web backoffice développée avec **Vue.js**, **TypeScript** et **Vite**.
 
 > 🔒 **Projet privé et propriétaire — Tous droits réservés**
@@ -131,6 +141,17 @@ cp .env.example .env
 ```
 
 Adapter ensuite les variables d'environnement nécessaires au fonctionnement de l'application.
+
+Utiliser `.env.local` sur chaque machine pour définir `VITE_API_BASE_URL`.
+Docker laisse Vite charger ce fichier. Pour la production, le workflow récupère
+uniquement cette variable publique dans
+`~/projets/e-radiologie-back-office/.env.local` sur le serveur avant le build.
+Créer ce fichier avant le premier déploiement ; il reste ignoré par Git.
+Une modification exige un nouveau build et la publication du nouveau `dist/`.
+Éviter les valeurs concurrentes dans `.env.production` ou l'environnement du build,
+qui auraient priorité sur `.env.local`. Aucune clé secrète ne doit être préfixée
+par `VITE_` : ces variables sont visibles dans le navigateur.
+
 
 ### Important
 
@@ -470,3 +491,34 @@ doit être documentée dans ce fichier afin de conserver une procédure d'instal
 ---
 
 **Projet privé — Copyright © 2026 Issam LAMMRI — Tous droits réservés.**
+## Administration V1
+
+Les rubriques `/content/specialties`, `/content/classifications`, `/content/courses`,
+`/content/dems-exercises`, `/content/report-exams` et `/content/report-templates`
+réutilisent l'authentification administrateur. Elles gèrent les règles ordonnées,
+l'arborescence des cours et blocs, les médias et les textes WYSIWYG Tiptap.
+Les comptes rendus privés des médecins ne sont pas exposés dans ces rubriques.
+
+`bun run lint` vérifie les fichiers TypeScript et les composants Vue via
+`vue-tsc` sous Node. Le conteneur local fournit Node 22 et Bun.
+Voir le [bilan V1](../V1_BILAN.md) et le [contrat API](../e-radiologie-backend/docs/V1_API.md).
+
+### Réorganisation et import d’images
+
+Les règles d’évaluation, sections, sous-titres et blocs de cours se réordonnent
+en glissant leur poignée, à la souris ou au toucher. Les déplacements restent
+dans la liste du même niveau. Les boutons haut/bas sont conservés ; une poignée
+sélectionnée au clavier répond également aux flèches haut/bas. L’ordre est
+sauvegardé avec le bouton « Enregistrer ».
+
+Les images de présentation, de blocs et de dossiers DEMS utilisent une zone de
+dépôt, également accessible par clic ou au clavier. Un aperçu, l’état de l’envoi,
+le remplacement et le retrait du formulaire sont disponibles. Les URL restent
+acceptées. L’import conserve les formats PNG/JPEG/WebP et la limite de 5 Mo ;
+les dépôts multiples sont refusés. L’enregistrement du formulaire attend la fin
+de tous les imports. La consultation seule ne permet ni import ni déplacement.
+
+La recette dédiée se lance depuis le dossier parent avec
+`npm run test:e2e -- tests/e2e/editorial-drag-drop.spec.ts` : réorganisation
+persistée, contenu WYSIWYG conservé, dépôt et sélection de fichiers, erreurs
+d’import, mode lecture seule et interaction tactile sur écran mobile.

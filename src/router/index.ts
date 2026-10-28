@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { resources } from '../api/editorialApi';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -31,6 +32,12 @@ const router = createRouter({
             component: () => import('../components/layout/DashboardLayout.vue'),
             meta: { requiresAuth: true },
             children: [
+                ...Object.keys(resources).flatMap(resource => [
+                    { path: `content/${resource}`, component: () => import('../views/editorial/EditorialListView.vue'), meta: { requiresAdmin: true, resource } },
+                    { path: `content/${resource}/create`, component: () => import('../views/editorial/EditorialFormView.vue'), meta: { requiresAdmin: true, resource } },
+                    { path: `content/${resource}/:id/edit`, component: () => import('../views/editorial/EditorialFormView.vue'), meta: { requiresAdmin: true, resource } },
+                    { path: `content/${resource}/:id`, component: () => import('../views/editorial/EditorialFormView.vue'), meta: { requiresAdmin: true, resource, readOnly: true } },
+                ]),
                 {
                     path: 'dashboard',
                     name: 'Dashboard',
